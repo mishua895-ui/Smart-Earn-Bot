@@ -1,6 +1,8 @@
 import telegram
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, ParseMode # ParseMode যোগ করা হয়েছে
+# ParseMode এর পরিবর্তে constants মডিউল ব্যবহার করা হয়েছে
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes, MessageHandler, filters
+from telegram.constants import ParseMode # ParseMode এর সঠিক ইমপোর্ট
 import datetime
 import logging
 import os
@@ -22,11 +24,10 @@ DATABASE_URL = os.environ.get("DATABASE_URL")
 try:
     ADMIN_USER_ID = int(os.environ.get("ADMIN_USER_ID"))
 except (TypeError, ValueError):
-    # যদি ENV ভেরিয়েবলে ADMIN_USER_ID না থাকে, এটি একটি ফলব্যাক ID.
+    # ফলব্যাক ID
     ADMIN_USER_ID = 12345678 
 
 # ----------------- SETTINGS -----------------
-# এই লিংকগুলো আপনি আপনার প্রয়োজন অনুযায়ী পরিবর্তন করতে পারেন।
 ADSTERRA_DIRECT_LINK = "https://roughlydispleasureslayer.com/ykawxa7tnr?key=bacb6ca047e4fabf73e54c2eaf85b2a5"
 TASK_LANDING_PAGE = "https://newspaper.42web.io"
 
@@ -43,7 +44,6 @@ def get_db_connection():
     if not DATABASE_URL:
         return None
     try:
-        # Render/Railway-তে 'sslmode=require' এর জন্য ডেটাবেস URL-এ এই প্যারামিটার থাকতে হবে।
         conn = psycopg2.connect(DATABASE_URL, sslmode='require') 
         return conn
     except Exception as e:
