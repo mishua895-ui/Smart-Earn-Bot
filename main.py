@@ -1,8 +1,7 @@
 import telegram
-# ParseMode এর পরিবর্তে constants মডিউল ব্যবহার করা হয়েছে
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes, MessageHandler, filters
-from telegram.constants import ParseMode # ParseMode এর সঠিক ইমপোর্ট
+from telegram.constants import ParseMode 
 import datetime
 import logging
 import os
@@ -17,12 +16,27 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# ----------------- ENV VARIABLES -----------------
+# ----------------- ENV VARIABLES (সংশোধিত) -----------------
 # Render/Railway-তে সেট করা ভেরিয়েবলগুলো এখান থেকে নেওয়া হবে।
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
-DATABASE_URL = os.environ.get("DATABASE_URL")
+if TELEGRAM_BOT_TOKEN:
+    TELEGRAM_BOT_TOKEN = TELEGRAM_BOT_TOKEN.strip()
+
+# ডেটাবেস সংযোগের সমস্যার জন্য এখন আলাদা ভেরিয়েবল ব্যবহার করা হবে।
+DB_NAME = os.environ.get("DB_NAME")
+DB_USER = os.environ.get("DB_USER")
+DB_PASSWORD = os.environ.get("DB_PASSWORD")
+DB_HOST = os.environ.get("DB_HOST")
+DB_PORT = os.environ.get("DB_PORT") # পোর্ট সাধারণত 5432
+DB_SSLMODE = os.environ.get("DB_SSLMODE") # মান হবে 'require'
+
 try:
-    ADMIN_USER_ID = int(os.environ.get("ADMIN_USER_ID"))
+    admin_id_str = os.environ.get("ADMIN_USER_ID")
+    if admin_id_str:
+        ADMIN_USER_ID = int(admin_id_str.strip())
+    else:
+        # ফলব্যাক ID
+        ADMIN_USER_ID = 12345678
 except (TypeError, ValueError):
     # ফলব্যাক ID
     ADMIN_USER_ID = 12345678 
@@ -39,12 +53,21 @@ REFERRAL_JOIN_BONUS = 50
 REFERRAL_DAILY_COMMISSION = 2
 MIN_WITHDRAW_POINTS = 1000
 
-# ----------------- DATABASE FUNCTIONS -----------------
+# ----------------- DATABASE FUNCTIONS (সংশোধিত) -----------------
 def get_db_connection():
-    if not DATABASE_URL:
+    # নতুন ভেরিয়েবল চেক করা হচ্ছে
+    if not DB_NAME or not DB_USER:
         return None
     try:
-        conn = psycopg2.connect(DATABASE_URL, sslmode='require') 
+        # আলাদা ভেরিয়েবল ব্যবহার করে সংযোগ
+        conn = psycopg2.connect(
+            dbname=DB_NAME,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            host=DB_HOST,
+            port=DB_PORT,
+            sslmode=DB_SSLMODE
+        )
         return conn
     except Exception as e:
         logger.error(f"DB connection failed: {e}")
@@ -325,9 +348,10 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     await update.message.reply_text("আপনার মেসেজ অ্যাডমিনকে পাঠানো হয়েছে।", reply_markup=get_main_keyboard(user_data))
 
-# ----------------- MAIN -----------------
+# ----------------- MAIN (সংশোধিত) -----------------
 def main():
-    if not TELEGRAM_BOT_TOKEN or not DATABASE_URL:
+    # এখন DB_NAME চেক করা হবে
+    if not TELEGRAM_BOT_TOKEN or not DB_NAME:
         logger.error("❌ ENV variables missing")
         sys.exit(1)
     init_db()
